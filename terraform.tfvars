@@ -1,5 +1,5 @@
 vpc_id                     = "vpc-0799504f6df9624a0"
-security_group_name        = "gryukhanyan-sg"
+security_group_name        = "sg"
 security_group_description = "Grig security group from tf"
 launch_template_name       = "gryukhanyan_launch_template_tf"
 instance_type_tf           = "t2.micro"

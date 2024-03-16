@@ -14,35 +14,33 @@ data "aws_security_group" "sg" {
   name = var.security_group_name
 }
 
+# Создание Security Group
 resource "aws_security_group" "sg-tf" {
   name        = var.security_group_name
   description = var.security_group_description
+  vpc_id      = var.vpc_id
 
-  vpc_id = var.vpc_id
-
+  # Определение входящих правил (ingress rules)
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] // Allow traffic from any IP address
+    cidr_blocks = ["0.0.0.0/0"]  # Разрешить доступ с любого IP адреса на порт 80
   }
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]  # Разрешить доступ с любого IP адреса на порт 22
   }
 
+  # Определение исходящих правил (egress rules)
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"          // Allow all protocols
-    cidr_blocks = ["0.0.0.0/0"] // Allow traffic to any IP address
-  }
-
-  tags = {
-    Name = var.security_group_name
+    protocol    = "-1"            # Разрешить любой трафик
+    cidr_blocks = ["0.0.0.0/0"]   # Разрешить доступ ко всем IP адресам
   }
 }
 
