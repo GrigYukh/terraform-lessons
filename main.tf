@@ -79,6 +79,6 @@ resource "aws_instance" "ec2_tf" {
   }
 
   tags = {
-    Name = "esargsyan_ec2_tf_${format("%01d", count.index + 1)}"
+    Name = "gryukhanyan_ec2_tf_${format("%01d", count.index + 1)}"
   }
 }
