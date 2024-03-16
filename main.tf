@@ -9,11 +9,6 @@ locals {
 }
 
 
-# security group
-data "aws_security_group" "sg" {
-  name = var.security_group_name
-}
-
 # Создание Security Group
 resource "aws_security_group" "sg-tf" {
   name        = var.security_group_name
