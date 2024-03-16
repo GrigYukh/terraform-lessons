@@ -1,49 +1,84 @@
-provider "aws" {
-  region = "us-west-2"  # Укажите свой регион AWS
+# general
+data "aws_ssm_parameter" "my_amzn_linux_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
-# Локальная переменная для форматирования имени экземпляра
+
 locals {
-  instance_name_format = "${var.instance_name_prefix}-%02d"
+    ec2_name_prefix = "gryukhanyan_ec2_tf_"
 }
 
-# Получение AMI ID из SSM Parameter Store
-data "aws_ssm_parameter" "ami" {
-  name = var.ami_parameter_name
+
+# security group
+data "aws_security_group" "sg" {
+  name = var.security_group_name
 }
 
-# Создание шаблона запуска экземпляра с UserData
-resource "aws_launch_template" "instance" {
-  name_prefix   = "example-instance"
-  image_id      = data.aws_ssm_parameter.ami.value
-  instance_type = "t2.micro"
+resource "aws_security_group" "sg-tf" {
+  name        = var.security_group_name
+  description = var.security_group_description
 
-  block_device_mappings {
-    device_name = "/dev/xvda"
-    ebs {
-      volume_size = 8
-    }
+  vpc_id = var.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] // Allow traffic from any IP address
   }
 
-  user_data = <<-EOF
-              #!/bin/bash
-              echo "Hello, World!" > index.html
-              nohup python -m SimpleHTTPServer 80 &
-              EOF
-}
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-# Создание экземпляров из шаблона
-resource "aws_instance" "example" {
-  count         = var.instance_count
-  ami           = aws_launch_template.instance.image_id
-  instance_type = aws_launch_template.instance.instance_type
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"          // Allow all protocols
+    cidr_blocks = ["0.0.0.0/0"] // Allow traffic to any IP address
+  }
 
   tags = {
-    Name = format(local.instance_name_format, count.index + 1)
+    Name = var.security_group_name
   }
 }
 
-# Вывод приватных IP-адресов экземпляров
-output "instance_private_ips" {
-  value = aws_instance.example[*].private_ip
+
+# Launch template
+resource "aws_launch_template" "launch_template_tf" {
+  name_prefix = var.launch_template_name
+  description = "EC2 launch template generated from terraform"
+
+  network_interfaces {
+    device_index                = 0
+    associate_public_ip_address = true
+    security_groups             = [data.aws_security_group.sg.id]
+  }
+
+  instance_type = var.instance_type_tf
+  key_name      = var.key_pair_tf
+  image_id      = data.aws_ssm_parameter.my_amzn_linux_ami.insecure_value
+
+
+  placement {
+    availability_zone = var.availability_zone_tf
+  }
+}
+
+
+# EC2
+resource "aws_instance" "ec2_tf" {
+  count = 3
+
+  launch_template {
+    id      = aws_launch_template.launch_template_tf.id
+    version = "$Latest"
+  }
+
+  tags = {
+    Name = "esargsyan_ec2_tf_${format("%01d", count.index + 1)}"
+  }
 }
